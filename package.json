@@ -26,7 +26,7 @@
   "directus:extension": {
     "type": "bundle",
     "sandbox": {
-      "enabled": false,
+      "enabled": true,
       "requestedScopes": {}
     },
     "path": {
