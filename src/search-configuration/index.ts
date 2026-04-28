@@ -6,7 +6,7 @@ export default defineInterface({
   name: "Configure Search",
   icon: "search",
   description:
-    "Override the Directus search system with custom filters, placeholders, and named filter presets for the relationship picker.",
+    "Override the Directus search system with custom filters and placeholders.",
   component: () => null,
   options: OptionsComponent as any,
   hideLabel: true,

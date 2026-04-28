@@ -16,10 +16,15 @@ interface SearchConfigValue {
   search_config?: Record<string, unknown>
 }
 
-const props = defineProps<{ value?: SearchConfigValue }>()
+const props = defineProps<{
+  value?: SearchConfigValue
+  collection?: string
+}>()
 const emit = defineEmits<{
   input: [value: SearchConfigValue]
 }>()
+
+const collectionName = computed(() => props.collection ?? '')
 
 const searchConfigFields = computed<InterfaceField[]>(() => [
   {
@@ -28,6 +33,9 @@ const searchConfigFields = computed<InterfaceField[]>(() => [
     type: 'json',
     meta: {
       interface: 'system-filter',
+      options: {
+        collectionName: collectionName.value,
+      },
       note: '$SEARCH, $SEARCH_LOWERCASE, $SEARCH_UPPERCASE, $SEARCH_WILDCARD placeholders supported',
     },
   },
