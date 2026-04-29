@@ -1,44 +1,5 @@
 import type {JSONValue} from "../types/index.js";
 
-const OPERATOR_FLIP_MAP: Record<string, string> = {
-	_contains: "_ncontains",
-	_icontains: "_nicontains",
-	_eq: "_neq",
-	_in: "_nin",
-	_starts_with: "_nstarts_with",
-	_istarts_with: "_nistarts_with",
-	_ends_with: "_nends_with",
-	_iends_with: "_niends_with"
-};
-
-export function flipContainsOperators(filter: JSONValue): JSONValue {
-	if (filter === null || filter === undefined) return filter;
-
-	if (Array.isArray(filter)) {
-		return filter.map(flipContainsOperators);
-	}
-
-	if (typeof filter === "object") {
-		const obj = filter as Record<string, unknown>;
-		const result: Record<string, unknown> = {};
-
-		for (const key in obj) {
-			const flippedKey = OPERATOR_FLIP_MAP[key] ?? key;
-			const val = obj[key];
-
-			if (typeof val === "object" && val !== null) {
-				result[flippedKey] = flipContainsOperators(val as JSONValue);
-			} else {
-				result[flippedKey] = val;
-			}
-		}
-
-		return result as JSONValue;
-	}
-
-	return filter;
-}
-
 function replacePlaceholders(value: string, searchTerm: string): JSONValue {
 	if (value === "-1") {
 		const result = +searchTerm;

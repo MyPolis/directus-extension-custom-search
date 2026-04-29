@@ -363,7 +363,7 @@ describe("intercept-search hook", () => {
 		});
 	});
 
-	test("negated term flips operators with _and wrapping", async () => {
+	test("negated term wraps resolved filter in _not", async () => {
 		const handler = await captureFilterHandler("negated", [
 			{
 				field: "search_alias",
@@ -389,7 +389,9 @@ describe("intercept-search hook", () => {
 
 		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_or: [{title: {_ncontains: "draft"}}, {body: {_ncontains: "draft"}}]
+			_not: {
+				_or: [{title: {_contains: "draft"}}, {body: {_contains: "draft"}}]
+			}
 		});
 	});
 
@@ -416,7 +418,7 @@ describe("intercept-search hook", () => {
 
 		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_and: [{title: {_contains: "urgent"}}, {title: {_ncontains: "draft"}}]
+			_and: [{title: {_contains: "urgent"}}, {_not: {title: {_contains: "draft"}}}]
 		});
 	});
 
@@ -443,7 +445,10 @@ describe("intercept-search hook", () => {
 
 		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_and: [{title: {_ncontains: "draft"}}, {title: {_ncontains: "spam"}}]
+			_and: [
+				{_not: {title: {_contains: "draft"}}},
+				{_not: {title: {_contains: "spam"}}}
+			]
 		});
 	});
 
@@ -473,8 +478,8 @@ describe("intercept-search hook", () => {
 			_and: [
 				{title: {_contains: "john doe"}},
 				{title: {_contains: "urgent"}},
-				{title: {_ncontains: "draft"}},
-				{title: {_ncontains: "spam"}}
+				{_not: {title: {_contains: "draft"}}},
+				{_not: {title: {_contains: "spam"}}}
 			]
 		});
 	});
