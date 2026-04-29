@@ -8,7 +8,10 @@ import type {
 	SearchConfig,
 	Services
 } from "../types/index.js";
-import {flipContainsOperators, recursivelyReplaceString} from "./recursivelyReplaceString.js";
+import {
+	flipContainsOperators,
+	recursivelyReplaceString
+} from "./recursivelyReplaceString.js";
 
 const SEARCH_STRING_TYPES = new Set(["string", "text", "csv"]);
 
@@ -260,7 +263,7 @@ export default (
 			for (const term of tokens.positive) {
 				const filter = recursivelyReplaceString(
 					searchConfig.search_config as JSONValue,
-					term,
+					term
 				);
 				if (filter) {
 					allFilters.push(filter as Record<string, unknown>);
@@ -271,8 +274,8 @@ export default (
 				const filter = flipContainsOperators(
 					recursivelyReplaceString(
 						searchConfig.search_config as JSONValue,
-						term,
-					),
+						term
+					)
 				);
 				if (filter) {
 					allFilters.push(filter as Record<string, unknown>);

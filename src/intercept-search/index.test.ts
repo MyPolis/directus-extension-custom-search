@@ -359,10 +359,7 @@ describe("intercept-search hook", () => {
 
 		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_and: [
-				{title: {_contains: "john doe"}},
-				{title: {_contains: "urgent"}}
-			]
+			_and: [{title: {_contains: "john doe"}}, {title: {_contains: "urgent"}}]
 		});
 	});
 
@@ -392,10 +389,7 @@ describe("intercept-search hook", () => {
 
 		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_or: [
-				{title: {_ncontains: "draft"}},
-				{body: {_ncontains: "draft"}}
-			]
+			_or: [{title: {_ncontains: "draft"}}, {body: {_ncontains: "draft"}}]
 		});
 	});
 
@@ -422,10 +416,7 @@ describe("intercept-search hook", () => {
 
 		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_and: [
-				{title: {_contains: "urgent"}},
-				{title: {_ncontains: "draft"}}
-			]
+			_and: [{title: {_contains: "urgent"}}, {title: {_ncontains: "draft"}}]
 		});
 	});
 
@@ -452,10 +443,7 @@ describe("intercept-search hook", () => {
 
 		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_and: [
-				{title: {_ncontains: "draft"}},
-				{title: {_ncontains: "spam"}}
-			]
+			_and: [{title: {_ncontains: "draft"}}, {title: {_ncontains: "spam"}}]
 		});
 	});
 

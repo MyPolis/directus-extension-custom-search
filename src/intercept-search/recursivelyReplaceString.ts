@@ -8,7 +8,7 @@ const OPERATOR_FLIP_MAP: Record<string, string> = {
 	_starts_with: "_nstarts_with",
 	_istarts_with: "_nistarts_with",
 	_ends_with: "_nends_with",
-	_iends_with: "_niends_with",
+	_iends_with: "_niends_with"
 };
 
 export function flipContainsOperators(filter: JSONValue): JSONValue {

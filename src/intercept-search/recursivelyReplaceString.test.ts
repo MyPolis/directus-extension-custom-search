@@ -1,6 +1,9 @@
 import {describe, test} from "node:test";
 import assert from "node:assert";
-import {flipContainsOperators, recursivelyReplaceString} from "./recursivelyReplaceString.js";
+import {
+	flipContainsOperators,
+	recursivelyReplaceString
+} from "./recursivelyReplaceString.js";
 
 describe("recursivelyReplaceString", () => {
 	test("returns null and undefined unchanged", () => {
@@ -150,16 +153,10 @@ describe("flipContainsOperators", () => {
 
 	test("recursively flips operators in nested structures", () => {
 		const input = {
-			_and: [
-				{title: {_contains: "x"}},
-				{status: {_eq: "published"}}
-			]
+			_and: [{title: {_contains: "x"}}, {status: {_eq: "published"}}]
 		};
 		assert.deepStrictEqual(flipContainsOperators(input), {
-			_and: [
-				{title: {_ncontains: "x"}},
-				{status: {_neq: "published"}}
-			]
+			_and: [{title: {_ncontains: "x"}}, {status: {_neq: "published"}}]
 		});
 	});
 
