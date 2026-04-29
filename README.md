@@ -51,12 +51,10 @@ Searching `"john doe" urgent -draft` generates:
 			]
 		},
 		{
-			"_not": {
-				"_or": [
-					{"title": {"_contains": "draft"}},
-					{"description": {"_contains": "draft"}}
-				]
-			}
+			"_or": [
+				{"title": {"_ncontains": "draft"}},
+				{"description": {"_ncontains": "draft"}}
+			]
 		}
 	]
 }

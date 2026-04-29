@@ -1,6 +1,9 @@
 import {describe, test} from "node:test";
 import assert from "node:assert";
-import {recursivelyReplaceString} from "./recursivelyReplaceString.js";
+import {
+	flipContainsOperators,
+	recursivelyReplaceString
+} from "./recursivelyReplaceString.js";
 
 describe("recursivelyReplaceString", () => {
 	test("returns null and undefined unchanged", () => {
@@ -105,5 +108,63 @@ describe("recursivelyReplaceString", () => {
 	test("passes through strings without placeholders (no unnecessary processing)", () => {
 		const result = recursivelyReplaceString("regular_field_value", "test");
 		assert.strictEqual(result, "regular_field_value");
+	});
+});
+
+describe("flipContainsOperators", () => {
+	test("returns null and undefined unchanged", () => {
+		assert.strictEqual(flipContainsOperators(null), null);
+		assert.strictEqual(flipContainsOperators(undefined), undefined);
+	});
+
+	test("passes through numbers, booleans, strings", () => {
+		assert.strictEqual(flipContainsOperators(42), 42);
+		assert.strictEqual(flipContainsOperators(true), true);
+		assert.strictEqual(flipContainsOperators("hello"), "hello");
+	});
+
+	test("flips _contains to _ncontains", () => {
+		const input = {title: {_contains: "draft"}};
+		assert.deepStrictEqual(flipContainsOperators(input), {
+			title: {_ncontains: "draft"}
+		});
+	});
+
+	test("flips _eq to _neq", () => {
+		const input = {status: {_eq: "draft"}};
+		assert.deepStrictEqual(flipContainsOperators(input), {
+			status: {_neq: "draft"}
+		});
+	});
+
+	test("flips _in to _nin", () => {
+		const input = {category: {_in: ["a", "b"]}};
+		assert.deepStrictEqual(flipContainsOperators(input), {
+			category: {_nin: ["a", "b"]}
+		});
+	});
+
+	test("flips _icontains to _nicontains", () => {
+		const input = {slug: {_icontains: "spam"}};
+		assert.deepStrictEqual(flipContainsOperators(input), {
+			slug: {_nicontains: "spam"}
+		});
+	});
+
+	test("recursively flips in nested structures", () => {
+		const input = {
+			_and: [{title: {_contains: "x"}}, {status: {_eq: "published"}}]
+		};
+		assert.deepStrictEqual(flipContainsOperators(input), {
+			_and: [{title: {_ncontains: "x"}}, {status: {_neq: "published"}}]
+		});
+	});
+
+	test("leaves non-operator keys unchanged", () => {
+		const input = {title: "hello", nested: {value: 42}};
+		assert.deepStrictEqual(flipContainsOperators(input), {
+			title: "hello",
+			nested: {value: 42}
+		});
 	});
 });
