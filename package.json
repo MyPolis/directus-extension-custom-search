@@ -2,7 +2,7 @@
 	"name": "@mypolis.eu/directus-extension-custom-search",
 	"description": "Override the Directus internal search system with a custom search filter - supports relationships",
 	"icon": "extension",
-	"version": "0.3.1",
+	"version": "0.3.2",
 	"license": "MIT",
 	"contributors": [
 		{
