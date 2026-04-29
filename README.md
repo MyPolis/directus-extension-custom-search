@@ -10,15 +10,8 @@ The search box supports a simple syntax for precise queries:
 | ---------------- | ------------ | --------------------------------------------- |
 | `word`           | `hello`      | Matches the term                              |
 | `"exact phrase"` | `"john doe"` | Treats quoted text as a literal, unsplit term |
-| `-word`          | `-draft`     | Excludes results containing the term          |
 
 Multiple terms are **ANDed** together — all must match for a result to appear.
-
-```
-"john doe" urgent -draft -spam
-```
-
-Must contain the phrase `"john doe"` AND `"urgent"`, must NOT contain `"draft"` or `"spam"`.
 
 For a config:
 
@@ -33,7 +26,7 @@ For a config:
 }
 ```
 
-Searching `"john doe" urgent -draft` generates:
+Searching `"john doe" urgent` generates:
 
 ```json
 {
@@ -48,12 +41,6 @@ Searching `"john doe" urgent -draft` generates:
 			"_or": [
 				{"title": {"_contains": "urgent"}},
 				{"description": {"_contains": "urgent"}}
-			]
-		},
-		{
-			"_or": [
-				{"title": {"_ncontains": "draft"}},
-				{"description": {"_ncontains": "draft"}}
 			]
 		}
 	]

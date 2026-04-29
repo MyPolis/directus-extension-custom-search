@@ -8,10 +8,7 @@ import type {
 	SearchConfig,
 	Services
 } from "../types/index.js";
-import {
-	flipContainsOperators,
-	recursivelyReplaceString
-} from "./recursivelyReplaceString.js";
+import {recursivelyReplaceString} from "./recursivelyReplaceString.js";
 
 const SEARCH_STRING_TYPES = new Set(["string", "text", "csv"]);
 
@@ -200,30 +197,18 @@ async function resolveSearchConfig(
 	}
 }
 
-interface SearchTokens {
-	positive: string[];
-	negated: string[];
-}
-
-function tokenizeSearch(input: string): SearchTokens {
-	const positive: string[] = [];
-	const negated: string[] = [];
+function tokenizeSearch(input: string): string[] {
+	const tokens: string[] = [];
 
 	const regex = /"([^"]*)"|'([^']*)'|(\S+)/g;
 	let match: RegExpExecArray | null;
 
 	while ((match = regex.exec(input)) !== null) {
 		const token = match[1] ?? match[2] ?? match[3];
-		if (!token) continue;
-
-		if (token.startsWith("-") && token.length > 1) {
-			negated.push(token.slice(1));
-		} else if (token !== "-") {
-			positive.push(token);
-		}
+		if (token) tokens.push(token);
 	}
 
-	return {positive, negated};
+	return tokens;
 }
 
 export default (
@@ -249,33 +234,21 @@ export default (
 			if (!searchConfig) return query;
 
 			const searchTerm = (query.search || "").trim();
-			const tokens = tokenizeSearch(searchTerm);
+			const terms = tokenizeSearch(searchTerm);
 
 			const {search: _search, ...restParams} = query;
 			const modifiedQuery: QueryParams = {...restParams};
 
-			if (tokens.positive.length + tokens.negated.length === 0) {
+			if (terms.length === 0) {
 				return modifiedQuery;
 			}
 
 			const allFilters: Record<string, unknown>[] = [];
 
-			for (const term of tokens.positive) {
+			for (const term of terms) {
 				const filter = recursivelyReplaceString(
 					searchConfig.search_config as JSONValue,
 					term
-				);
-				if (filter) {
-					allFilters.push(filter as Record<string, unknown>);
-				}
-			}
-
-			for (const term of tokens.negated) {
-				const filter = flipContainsOperators(
-					recursivelyReplaceString(
-						searchConfig.search_config as JSONValue,
-						term
-					)
 				);
 				if (filter) {
 					allFilters.push(filter as Record<string, unknown>);

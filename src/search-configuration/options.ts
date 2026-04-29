@@ -17,7 +17,7 @@ export const searchConfigurationOptions = (ctx: ExtensionOptionsContext) => {
 					collectionName: ctx.collection ?? "",
 					collectionRequired: true
 				},
-				note: "$SEARCH, $SEARCH_LOWERCASE, $SEARCH_UPPERCASE, $SEARCH_WILDCARD supported as partial strings. Multi-word search is ANDed. Use quotes for exact phrases, -prefix to exclude."
+				note: "$SEARCH, $SEARCH_LOWERCASE, $SEARCH_UPPERCASE, $SEARCH_WILDCARD supported as partial strings. Multi-word search is ANDed. Use quotes for exact phrases."
 			}
 		}
 	];
