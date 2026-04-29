@@ -33,10 +33,11 @@ const searchConfigFields = computed<InterfaceField[]>(() => [
     type: 'json',
     meta: {
       interface: 'system-filter',
+      note: '$SEARCH, $SEARCH_LOWERCASE, $SEARCH_UPPERCASE, $SEARCH_WILDCARD placeholders supported',
       options: {
         collectionName: collectionName.value,
+				collectionRequired: true
       },
-      note: '$SEARCH, $SEARCH_LOWERCASE, $SEARCH_UPPERCASE, $SEARCH_WILDCARD placeholders supported',
     },
   },
 ])
