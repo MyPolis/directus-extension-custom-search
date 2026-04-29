@@ -1,39 +1,55 @@
-import type { JSONValue, ReplaceFunction } from "../types/index.js";
+import type {JSONValue} from "../types/index.js";
+
+function replacePlaceholders(value: string, searchTerm: string): JSONValue {
+	if (value === "-1") {
+		const result = +searchTerm;
+		return isNaN(result) ? value : result;
+	}
+
+	if (
+		!value.includes("$SEARCH_WILDCARD") &&
+		!value.includes("$SEARCH_UPPERCASE") &&
+		!value.includes("$SEARCH_LOWERCASE") &&
+		!value.includes("$SEARCH")
+	) {
+		return value;
+	}
+
+	const wildcardVal = searchTerm ? `*${searchTerm}*` : "";
+
+	let result = value;
+	result = result.replaceAll("$SEARCH_WILDCARD", wildcardVal);
+	result = result.replaceAll("$SEARCH_UPPERCASE", searchTerm.toUpperCase());
+	result = result.replaceAll("$SEARCH_LOWERCASE", searchTerm.toLowerCase());
+	result = result.replaceAll("$SEARCH", searchTerm);
+
+	return result;
+}
 
 export function recursivelyReplaceString(
-  value: JSONValue,
-  replaceFunc: ReplaceFunction,
+	value: JSONValue,
+	searchTerm: string
 ): JSONValue {
-  if (value === null || value === undefined) return value;
+	if (value === null || value === undefined) return value;
 
-  if (Array.isArray(value)) {
-    return value.map((item) => recursivelyReplaceString(item, replaceFunc));
-  }
+	if (Array.isArray(value)) {
+		return value.map((item) => recursivelyReplaceString(item, searchTerm));
+	}
 
-  if (typeof value === "object") {
-    const result: Record<string, JSONValue> = {};
-    for (const key in value) {
-      result[key] = recursivelyReplaceString(
-        (value as Record<string, JSONValue>)[key],
-        replaceFunc,
-      );
-    }
-    return result;
-  }
+	if (typeof value === "object") {
+		const result: Record<string, JSONValue> = {};
+		for (const key in value) {
+			result[key] = recursivelyReplaceString(
+				(value as Record<string, JSONValue>)[key],
+				searchTerm
+			);
+		}
+		return result;
+	}
 
-  if (typeof value === "string") {
-    if (value === "$SEARCH") return replaceFunc(value);
-    if (value === "$SEARCH_LOWERCASE") return replaceFunc(value).toLowerCase();
-    if (value === "$SEARCH_UPPERCASE") return replaceFunc(value).toUpperCase();
-    if (value === "$SEARCH_WILDCARD") {
-      const searchVal = replaceFunc("$SEARCH");
-      return searchVal ? `*${searchVal}*` : "";
-    }
-    if (value === "-1") {
-      const result = +replaceFunc("$SEARCH");
-      return isNaN(result) ? value : result;
-    }
-  }
+	if (typeof value === "string") {
+		return replacePlaceholders(value, searchTerm);
+	}
 
-  return value;
+	return value;
 }

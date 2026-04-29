@@ -1,22 +1,4 @@
 {
-	"$schema": "https://opencode.ai/config.json",
-	"model": "opencode-go/minimax-m2.7",
-	"mcp": {
-		"postgres": {
-			"type": "local",
-			"command": [
-				"docker",
-				"run",
-				"-i",
-				"--rm",
-				"-e",
-				"DATABASE_URI",
-				"crystaldba/postgres-mcp",
-				"--access-mode=unrestricted"
-			],
-			"environment": {
-				"DATABASE_URI": "postgres://mypolis:password@localhost:5432/mypolis?sslmode=disable"
-			}
-		}
-	}
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/deepseek-v4-pro"
 }
