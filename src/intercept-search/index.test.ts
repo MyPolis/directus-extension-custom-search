@@ -141,7 +141,7 @@ describe("intercept-search hook", () => {
 		});
 	});
 
-	test("auto-generates plain _or config (term splitting handled by hook)", async () => {
+	test("auto-generates and uses _and wrapping for multi-word search", async () => {
 		const handler = await captureFilterHandler("auto_term", [
 			{field: "title", type: "string"},
 			{field: "body", type: "text"}
@@ -154,9 +154,8 @@ describe("intercept-search hook", () => {
 		);
 
 		assert.strictEqual(result.search, undefined);
-		// Multi-term: each term resolves the config, wrapped in _or
 		assert.deepStrictEqual(result.filter, {
-			_or: [
+			_and: [
 				{
 					_or: [{title: {_contains: "hello"}}, {body: {_contains: "hello"}}]
 				},
@@ -167,7 +166,7 @@ describe("intercept-search hook", () => {
 		});
 	});
 
-	test("splits multi-word search into _or of per-term configs", async () => {
+	test("splits multi-word search into _and of per-term configs", async () => {
 		const handler = await captureFilterHandler("custom_multi_term", [
 			{
 				field: "search_alias",
@@ -193,7 +192,7 @@ describe("intercept-search hook", () => {
 
 		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_or: [
+			_and: [
 				{
 					_and: [{status: {_eq: "published"}}, {title: {_contains: "hello"}}]
 				},
@@ -223,7 +222,7 @@ describe("intercept-search hook", () => {
 		assert.strictEqual(result.filter, undefined);
 	});
 
-	test("returns empty filter value for $SEARCH_WILDCARD with empty search", async () => {
+	test("returns no filter for $SEARCH_WILDCARD with empty search", async () => {
 		const handler = await captureFilterHandler("wildcard_empty", [
 			{
 				field: "search_alias",
@@ -245,9 +244,7 @@ describe("intercept-search hook", () => {
 		);
 
 		assert.strictEqual(result.search, undefined);
-		assert.deepStrictEqual(result.filter, {
-			title: {_contains: ""}
-		});
+		assert.strictEqual(result.filter, undefined);
 	});
 
 	test("caches and reuses config on subsequent calls to same collection", async () => {
@@ -286,7 +283,7 @@ describe("intercept-search hook", () => {
 		});
 	});
 
-	test("handles empty search term with search_config present", async () => {
+	test("handles empty search term — returns query with no filter", async () => {
 		const handler = await captureFilterHandler("empty_search", [
 			{
 				field: "search_alias",
@@ -308,8 +305,240 @@ describe("intercept-search hook", () => {
 		);
 
 		assert.strictEqual(result.search, undefined);
+		assert.strictEqual(result.filter, undefined);
+	});
+
+	// Search syntax: quoted phrases, negation, mixed
+	test("treats quoted text as a single literal term", async () => {
+		const handler = await captureFilterHandler("quoted", [
+			{
+				field: "search_alias",
+				type: "alias",
+				meta: {
+					options: {
+						search_config: {
+							_or: [{title: {_contains: "$SEARCH"}}]
+						}
+					}
+				}
+			}
+		]);
+
+		const result = await handler(
+			{search: '"hello world"'},
+			{collection: "quoted"},
+			{schema: {}}
+		);
+
+		assert.strictEqual(result.search, undefined);
 		assert.deepStrictEqual(result.filter, {
-			_or: [{title: {_contains: ""}}]
+			_or: [{title: {_contains: "hello world"}}]
 		});
+	});
+
+	test("quoted phrase combined with other terms uses _and wrapping", async () => {
+		const handler = await captureFilterHandler("quoted_multi", [
+			{
+				field: "search_alias",
+				type: "alias",
+				meta: {
+					options: {
+						search_config: {
+							title: {_contains: "$SEARCH"}
+						}
+					}
+				}
+			}
+		]);
+
+		const result = await handler(
+			{search: '"john doe" urgent'},
+			{collection: "quoted_multi"},
+			{schema: {}}
+		);
+
+		assert.strictEqual(result.search, undefined);
+		assert.deepStrictEqual(result.filter, {
+			_and: [
+				{title: {_contains: "john doe"}},
+				{title: {_contains: "urgent"}}
+			]
+		});
+	});
+
+	test("negated term flips operators with _and wrapping", async () => {
+		const handler = await captureFilterHandler("negated", [
+			{
+				field: "search_alias",
+				type: "alias",
+				meta: {
+					options: {
+						search_config: {
+							_or: [
+								{title: {_contains: "$SEARCH"}},
+								{body: {_contains: "$SEARCH"}}
+							]
+						}
+					}
+				}
+			}
+		]);
+
+		const result = await handler(
+			{search: "-draft"},
+			{collection: "negated"},
+			{schema: {}}
+		);
+
+		assert.strictEqual(result.search, undefined);
+		assert.deepStrictEqual(result.filter, {
+			_or: [
+				{title: {_ncontains: "draft"}},
+				{body: {_ncontains: "draft"}}
+			]
+		});
+	});
+
+	test("positive and negated terms combined with _and", async () => {
+		const handler = await captureFilterHandler("mixed_pos_neg", [
+			{
+				field: "search_alias",
+				type: "alias",
+				meta: {
+					options: {
+						search_config: {
+							title: {_contains: "$SEARCH"}
+						}
+					}
+				}
+			}
+		]);
+
+		const result = await handler(
+			{search: "urgent -draft"},
+			{collection: "mixed_pos_neg"},
+			{schema: {}}
+		);
+
+		assert.strictEqual(result.search, undefined);
+		assert.deepStrictEqual(result.filter, {
+			_and: [
+				{title: {_contains: "urgent"}},
+				{title: {_ncontains: "draft"}}
+			]
+		});
+	});
+
+	test("multiple negated terms all included in _and", async () => {
+		const handler = await captureFilterHandler("multi_negated", [
+			{
+				field: "search_alias",
+				type: "alias",
+				meta: {
+					options: {
+						search_config: {
+							title: {_contains: "$SEARCH"}
+						}
+					}
+				}
+			}
+		]);
+
+		const result = await handler(
+			{search: "-draft -spam"},
+			{collection: "multi_negated"},
+			{schema: {}}
+		);
+
+		assert.strictEqual(result.search, undefined);
+		assert.deepStrictEqual(result.filter, {
+			_and: [
+				{title: {_ncontains: "draft"}},
+				{title: {_ncontains: "spam"}}
+			]
+		});
+	});
+
+	test("complex query: quoted phrase + positive + negated", async () => {
+		const handler = await captureFilterHandler("complex", [
+			{
+				field: "search_alias",
+				type: "alias",
+				meta: {
+					options: {
+						search_config: {
+							title: {_contains: "$SEARCH"}
+						}
+					}
+				}
+			}
+		]);
+
+		const result = await handler(
+			{search: '"john doe" urgent -draft -spam'},
+			{collection: "complex"},
+			{schema: {}}
+		);
+
+		assert.strictEqual(result.search, undefined);
+		assert.deepStrictEqual(result.filter, {
+			_and: [
+				{title: {_contains: "john doe"}},
+				{title: {_contains: "urgent"}},
+				{title: {_ncontains: "draft"}},
+				{title: {_ncontains: "spam"}}
+			]
+		});
+	});
+
+	test("lone dash is treated as a regular search term", async () => {
+		const handler = await captureFilterHandler("lone_dash", [
+			{
+				field: "search_alias",
+				type: "alias",
+				meta: {
+					options: {
+						search_config: {
+							title: {_contains: "$SEARCH"}
+						}
+					}
+				}
+			}
+		]);
+
+		const result = await handler(
+			{search: "-"},
+			{collection: "lone_dash"},
+			{schema: {}}
+		);
+
+		// Lone '-' is not a token (regex skips it), so no filter
+		assert.strictEqual(result.search, undefined);
+		assert.strictEqual(result.filter, undefined);
+	});
+
+	test("whitespace-only search produces no filter", async () => {
+		const handler = await captureFilterHandler("whitespace_only", [
+			{
+				field: "search_alias",
+				type: "alias",
+				meta: {
+					options: {
+						search_config: {
+							title: {_contains: "$SEARCH"}
+						}
+					}
+				}
+			}
+		]);
+
+		const result = await handler(
+			{search: "   "},
+			{collection: "whitespace_only"},
+			{schema: {}}
+		);
+
+		assert.strictEqual(result.search, undefined);
+		assert.strictEqual(result.filter, undefined);
 	});
 });

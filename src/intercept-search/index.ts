@@ -8,7 +8,7 @@ import type {
 	SearchConfig,
 	Services
 } from "../types/index.js";
-import {recursivelyReplaceString} from "./recursivelyReplaceString.js";
+import {flipContainsOperators, recursivelyReplaceString} from "./recursivelyReplaceString.js";
 
 const SEARCH_STRING_TYPES = new Set(["string", "text", "csv"]);
 
@@ -197,6 +197,32 @@ async function resolveSearchConfig(
 	}
 }
 
+interface SearchTokens {
+	positive: string[];
+	negated: string[];
+}
+
+function tokenizeSearch(input: string): SearchTokens {
+	const positive: string[] = [];
+	const negated: string[] = [];
+
+	const regex = /"([^"]*)"|'([^']*)'|(\S+)/g;
+	let match: RegExpExecArray | null;
+
+	while ((match = regex.exec(input)) !== null) {
+		const token = match[1] ?? match[2] ?? match[3];
+		if (!token) continue;
+
+		if (token.startsWith("-") && token.length > 1) {
+			negated.push(token.slice(1));
+		} else if (token !== "-") {
+			positive.push(token);
+		}
+	}
+
+	return {positive, negated};
+}
+
 export default (
 	{filter}: SandboxHookRegisterContext,
 	{services}: {services: Services}
@@ -220,28 +246,43 @@ export default (
 			if (!searchConfig) return query;
 
 			const searchTerm = (query.search || "").trim();
-			const terms = searchTerm ? searchTerm.split(/\s+/) : [];
+			const tokens = tokenizeSearch(searchTerm);
 
 			const {search: _search, ...restParams} = query;
 			const modifiedQuery: QueryParams = {...restParams};
 
-			if (terms.length < 2) {
+			if (tokens.positive.length + tokens.negated.length === 0) {
+				return modifiedQuery;
+			}
+
+			const allFilters: Record<string, unknown>[] = [];
+
+			for (const term of tokens.positive) {
 				const filter = recursivelyReplaceString(
 					searchConfig.search_config as JSONValue,
-					terms[0] || ""
+					term,
 				);
 				if (filter) {
-					modifiedQuery.filter = filter as Record<string, unknown>;
+					allFilters.push(filter as Record<string, unknown>);
 				}
-			} else {
-				modifiedQuery.filter = {
-					_or: terms.map((term) =>
-						recursivelyReplaceString(
-							searchConfig.search_config as JSONValue,
-							term
-						)
-					)
-				};
+			}
+
+			for (const term of tokens.negated) {
+				const filter = flipContainsOperators(
+					recursivelyReplaceString(
+						searchConfig.search_config as JSONValue,
+						term,
+					),
+				);
+				if (filter) {
+					allFilters.push(filter as Record<string, unknown>);
+				}
+			}
+
+			if (allFilters.length === 1 && allFilters[0]) {
+				modifiedQuery.filter = allFilters[0];
+			} else if (allFilters.length > 1) {
+				modifiedQuery.filter = {_and: allFilters};
 			}
 
 			return modifiedQuery;

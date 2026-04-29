@@ -1,6 +1,64 @@
 # Custom Search for Directus
 
-Overrides the built-in Directus search system with configurable filters per collection. Supports AND/OR groups, case variants, wildcard matching, relational/nested field search, and automatic multi-word term splitting.
+Overrides the built-in Directus search system with configurable filters per collection. Supports AND/OR groups, case variants, wildcard matching, relational/nested field search, and a search syntax with quoted phrases, negation, and automatic AND-based term splitting.
+
+## Search Syntax
+
+The search box supports a simple syntax for precise queries:
+
+| Syntax           | Example      | Behavior                                      |
+| ---------------- | ------------ | --------------------------------------------- |
+| `word`           | `hello`      | Matches the term                              |
+| `"exact phrase"` | `"john doe"` | Treats quoted text as a literal, unsplit term |
+| `-word`          | `-draft`     | Excludes results containing the term          |
+
+Multiple terms are **ANDed** together — all must match for a result to appear.
+
+```
+"john doe" urgent -draft -spam
+```
+
+Must contain the phrase `"john doe"` AND `"urgent"`, must NOT contain `"draft"` or `"spam"`.
+
+For a config:
+
+```json
+{
+	"search_config": {
+		"_or": [
+			{"title": {"_contains": "$SEARCH"}},
+			{"description": {"_contains": "$SEARCH"}}
+		]
+	}
+}
+```
+
+Searching `"john doe" urgent -draft` generates:
+
+```json
+{
+	"_and": [
+		{
+			"_or": [
+				{"title": {"_contains": "john doe"}},
+				{"description": {"_contains": "john doe"}}
+			]
+		},
+		{
+			"_or": [
+				{"title": {"_contains": "urgent"}},
+				{"description": {"_contains": "urgent"}}
+			]
+		},
+		{
+			"_or": [
+				{"title": {"_ncontains": "draft"}},
+				{"description": {"_ncontains": "draft"}}
+			]
+		}
+	]
+}
+```
 
 ## Quick Start
 
@@ -23,46 +81,6 @@ Placeholders can be used as **standalone values** or **embedded within larger st
 | `$SEARCH_WILDCARD`  | Wrapped with `*` wildcards | `*Hi*`                 |
 
 `$SEARCH_WILDCARD` returns `""` (empty string) when the search is empty, so filters like `{ "_contains": "$SEARCH_WILDCARD" }` safely match nothing.
-
-## Multi-Word Search
-
-When the user types multiple words (e.g. `"hello world"`), the search term is split on whitespace and each term resolves the config independently. Results are wrapped in `_or`, so **any** matching term returns a result.
-
-For example, with the config:
-
-```json
-{
-	"search_config": {
-		"_or": [
-			{"title": {"_contains": "$SEARCH"}},
-			{"description": {"_contains": "$SEARCH"}}
-		]
-	}
-}
-```
-
-Searching `"hello world"` generates:
-
-```json
-{
-	"_or": [
-		{
-			"_or": [
-				{"title": {"_contains": "hello"}},
-				{"description": {"_contains": "hello"}}
-			]
-		},
-		{
-			"_or": [
-				{"title": {"_contains": "world"}},
-				{"description": {"_contains": "world"}}
-			]
-		}
-	]
-}
-```
-
-Single-word searches resolve the config directly with no wrapping. Empty searches produce an empty `_or` group that matches nothing.
 
 ## Example Configurations
 
