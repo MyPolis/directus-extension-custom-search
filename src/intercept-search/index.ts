@@ -1,3 +1,4 @@
+import type { SandboxHookRegisterContext } from "directus:api";
 import type {
   FieldMeta,
   JSONValue,
@@ -8,17 +9,8 @@ import type {
 } from "../types/index.js";
 import { recursivelyReplaceString } from "./recursivelyReplaceString.js";
 
-type FilterHandler = (
-  query: {
-    search?: string;
-    filter?: Record<string, unknown>;
-  },
-  context: { collection: string },
-  extra: SchemaContext,
-) => Promise<QueryParams>;
-
 export default (
-  { filter }: { filter: (event: string, handler: FilterHandler) => void },
+  { filter }: SandboxHookRegisterContext,
   { services }: { services: Services },
 ) => {
   filter(
