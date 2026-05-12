@@ -1,6 +1,8 @@
 # Custom Search for Directus
 
-Overrides the built-in Directus search system with configurable filters per collection. Supports AND/OR groups, case variants, wildcard matching, relational/nested field search, and a search syntax with quoted phrases, negation, and automatic AND-based term splitting.
+> **Acknowledgement:** This extension is inspired by and based on [cmiteam/directus-extension-custom-search](https://github.com/cmiteam/directus-extension-custom-search). The original MIT license is retained in [LICENSE](./LICENSE).
+
+Overrides the built-in Directus search system with configurable filters per collection. Supports AND/OR groups, case variants, wildcard matching, relational/nested field search, and a search syntax with quoted phrases, and automatic AND-based term splitting.
 
 ## Search Syntax
 
